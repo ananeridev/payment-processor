@@ -4,8 +4,17 @@ import { routedPayment } from '../services/routingService.js'
 import { nextDelaySec } from '../utils/index.js'
 import { getConfig } from '../config.js'
 
+/**
+ * Create a worker id
+ * @returns {string}
+ */
 const createWorkerId = () => `worker-${os.hostname()}-${process.pid}`
 
+/**
+ * Create a payment payload
+ * @param {Object} payment
+ * @returns {Object}
+ */
 const createPaymentPayload = (payment) => ({
 	amount_cents: payment.amount_cents,
 	currency: payment.currency,
@@ -121,6 +130,5 @@ class PaymentWorker {
 export { PaymentWorker }
 export default PaymentWorker
 
-// Instanciar e executar o worker
 const worker = new PaymentWorker()
 worker.run().catch(console.error)
