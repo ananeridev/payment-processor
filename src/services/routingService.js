@@ -58,4 +58,4 @@ function pick(label, res) {
 	return res ? { label, ...res } : null
 }
 
-export default { routedPayment }
+export { routedPayment }

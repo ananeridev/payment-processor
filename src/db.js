@@ -1,5 +1,5 @@
-const { Pool } = require('pg')
-const { getConfig } = require('./config')
+import { getConfig } from './config.js'
+import { Pool } from 'pg'
 
 const pool = new Pool({ connectionString: getConfig().dbUrl })
 
@@ -7,4 +7,4 @@ function query(sql, params) {
 	return pool.query(sql, params)
 }
 
-module.exports = { pool, query }
+export { pool, query }

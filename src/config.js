@@ -1,4 +1,4 @@
-function getConfig() {
+export function getConfig() {
     return {
     port: Number(process.env.PORT) || 3000,
     dbUrl: process.env.DB_URL,
@@ -12,4 +12,4 @@ function getConfig() {
  }
 }
 
-module.exports = { getConfig}
+export default { getConfig}
