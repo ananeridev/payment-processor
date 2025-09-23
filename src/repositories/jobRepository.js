@@ -34,7 +34,7 @@ async function finalize(jobId, status) {
 
 async function retry(jobId, attempts, delaySec) {
 	await query(
-		`UPDATE jobs SET attempts=$2, status='queued', run_at=now() + ($3 ||| ' seconds')::interval WHERE id=$1`,
+		`UPDATE jobs SET attempts=$2, status='queued', run_at=now() + ($3 || ' seconds')::interval WHERE id=$1`,
 		[jobId, attempts, String(delaySec)]
 	)
 }
