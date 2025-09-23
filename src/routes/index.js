@@ -1,4 +1,5 @@
 import { buildPaymentsRouter } from './paymentsRoute.js'
+import migrationRouter from './migrationRoute.js'
 
-export { buildPaymentsRouter }
-export default { buildPaymentsRouter }
+export { buildPaymentsRouter, migrationRouter }
+export default { buildPaymentsRouter, migrationRouter }

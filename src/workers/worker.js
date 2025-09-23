@@ -4,38 +4,32 @@ import { routedPayment } from '../services/routingService.js'
 import { nextDelaySec } from '../utils/index.js'
 import { getConfig } from '../config.js'
 
-// Função pura para criar ID do worker
 const createWorkerId = () => `worker-${os.hostname()}-${process.pid}`
 
-// Função pura para criar payload de pagamento
 const createPaymentPayload = (payment) => ({
 	amount_cents: payment.amount_cents,
 	currency: payment.currency,
 	payment_id: payment.id
 })
 
-// Função pura para determinar status da tentativa
 const determineAttemptStatus = (response) => 
 	response.ok ? 'ok' : (response.code === 599 ? 'timeout' : 'error')
 
-// Função pura para determinar se deve finalizar
 const shouldFinalize = (payment) => 
 	payment.status === 'succeeded' || payment.status === 'failed'
 
-// Função pura para determinar se deve falhar
 const shouldFail = (attempts, maxAttempts) => attempts >= maxAttempts
 
-// Função utilitária para sleep
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
 class PaymentWorker {
 	constructor() {
 		this.workerId = createWorkerId()
-		this.jobRepo = new JobRepository()
-		this.paymentRepo = new PaymentRepository()
-		this.attemptsRepo = new AttemptsRepository()
-		this.healthRepo = new ProviderHealthRepository()
-		this.outboxRepo = new OutboxRepository()
+		this.jobRepo = JobRepository
+		this.paymentRepo = PaymentRepository
+		this.attemptsRepo = AttemptsRepository
+		this.healthRepo = ProviderHealthRepository
+		this.outboxRepo = OutboxRepository
 		this.config = getConfig()
 	}
 
@@ -121,7 +115,12 @@ class PaymentWorker {
 			await this.processJob(job)
 		}
 	}
+
 }
 
 export { PaymentWorker }
 export default PaymentWorker
+
+// Instanciar e executar o worker
+const worker = new PaymentWorker()
+worker.run().catch(console.error)
