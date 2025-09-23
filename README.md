@@ -66,6 +66,20 @@ npm run test:concurrency
 npm run test:all
 ```
 
+### Stress test evidences
+
+Load test:
+
+<img width="854" height="646" alt="Screenshot 2025-09-23 at 14 27 34" src="https://github.com/user-attachments/assets/a23c3675-5bfd-4198-adfe-249adb39ff6c" />
+
+Stress test:
+
+<img width="1098" height="665" alt="Screenshot 2025-09-23 at 14 28 34" src="https://github.com/user-attachments/assets/f2d28590-440b-4804-9fc9-7c7613a82ceb" />
+
+Concurrency Test
+
+<img width="1112" height="923" alt="Screenshot 2025-09-23 at 14 32 54" src="https://github.com/user-attachments/assets/f986b41a-28ed-4092-8ff4-ae716dfdc645" />
+
 ## Performance Targets collected
 
 - Payment creation: < 1.5s (P95)
