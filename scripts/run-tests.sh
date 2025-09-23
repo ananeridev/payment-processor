@@ -1,19 +1,15 @@
 #!/bin/bash
 
-# Script para executar todos os testes do processador de pagamentos
-
 set -e
 
-echo "🚀 Iniciando testes do Payment Processor..."
+echo "🚀 Starting Payment Processor tests..."
 
-# Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Função para imprimir com cores
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -30,131 +26,120 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Verificar se o Node.js está na versão correta
-print_status "Verificando versão do Node.js..."
+print_status "Checking Node.js version..."
 NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
 if [ "$NODE_VERSION" -lt 20 ]; then
-    print_error "Node.js versão 20+ é necessária. Versão atual: $(node --version)"
+    print_error "Node.js version 20+ required. Current version: $(node --version)"
     exit 1
 fi
-print_success "Node.js versão $(node --version) ✓"
+print_success "Node.js version $(node --version) ✓"
 
-# Verificar se K6 está instalado
-print_status "Verificando K6..."
+print_status "Checking K6 installation..."
 if ! command -v k6 &> /dev/null; then
-    print_error "K6 não está instalado. Execute: brew install k6"
+    print_error "K6 not installed. Run: brew install k6"
     exit 1
 fi
-print_success "K6 versão $(k6 version | head -n1) ✓"
+print_success "K6 version $(k6 version | head -n1) ✓"
 
-# Verificar se o servidor está rodando
-print_status "Verificando se o servidor está rodando..."
+print_status "Checking if server is running..."
 if ! curl -s http://localhost:3000/health > /dev/null 2>&1; then
-    print_warning "Servidor não está rodando em localhost:3000"
-    print_status "Iniciando servidor em background..."
+    print_warning "Server not running on localhost:3000"
+    print_status "Starting server in background..."
     npm start &
     SERVER_PID=$!
     sleep 5
     
-    # Verificar novamente
     if ! curl -s http://localhost:3000/health > /dev/null 2>&1; then
-        print_error "Falha ao iniciar o servidor"
+        print_error "Failed to start server"
         exit 1
     fi
-    print_success "Servidor iniciado (PID: $SERVER_PID)"
+    print_success "Server started (PID: $SERVER_PID)"
 else
-    print_success "Servidor já está rodando ✓"
+    print_success "Server already running ✓"
 fi
 
-# Criar diretório de resultados se não existir
 mkdir -p test-results
 
-# Executar testes de integração
-print_status "Executando testes de integração..."
+print_status "Running integration tests..."
 if npm test 2>/dev/null; then
-    print_success "Testes de integração passaram ✓"
+    print_success "Integration tests passed ✓"
 else
-    print_warning "Testes de integração não configurados ou falharam"
+    print_warning "Integration tests not configured or failed"
 fi
 
-# Executar teste de carga básico
-print_status "Executando teste de carga básico..."
+print_status "Running basic load test..."
 k6 run $(pwd)/tests/load/payment-load-test.js --out json=test-results/load-test-results.json
 if [ $? -eq 0 ]; then
-    print_success "Teste de carga básico concluído ✓"
+    print_success "Basic load test completed ✓"
 else
-    print_error "Teste de carga básico falhou"
+    print_error "Basic load test failed"
 fi
 
-# Executar teste de stress
-print_status "Executando teste de stress..."
+print_status "Running stress test..."
 k6 run $(pwd)/tests/load/stress-test.js --out json=test-results/stress-test-results.json
 if [ $? -eq 0 ]; then
-    print_success "Teste de stress concluído ✓"
+    print_success "Stress test completed ✓"
 else
-    print_error "Teste de stress falhou"
+    print_error "Stress test failed"
 fi
 
-# Executar teste de concorrência
-print_status "Executando teste de concorrência..."
+print_status "Running concurrency test..."
 k6 run $(pwd)/tests/load/concurrency-test.js --out json=test-results/concurrency-test-results.json
 if [ $? -eq 0 ]; then
-    print_success "Teste de concorrência concluído ✓"
+    print_success "Concurrency test completed ✓"
 else
-    print_error "Teste de concorrência falhou"
+    print_error "Concurrency test failed"
 fi
 
-# Gerar relatório consolidado
-print_status "Gerando relatório consolidado..."
+print_status "Generating consolidated report..."
 cat > test-results/consolidated-report.md << EOF
-# Relatório de Testes - Payment Processor
+# Test Report - Payment Processor
 
-## Resumo dos Testes
+## Test Summary
 
-### Testes de Integração
-- ✅ Testes de criação de pagamento
-- ✅ Testes de idempotência
-- ✅ Testes de atualização de status
-- ✅ Testes de resiliência de provider
+### Integration Tests
+- ✅ Payment creation tests
+- ✅ Idempotency tests
+- ✅ Status update tests
+- ✅ Provider resilience tests
 
-### Testes de Carga
-- ✅ Teste de carga básico (10-100 usuários)
-- ✅ Teste de stress (até 300 usuários)
-- ✅ Teste de concorrência
+### Load Tests
+- ✅ Basic load test (10-100 users)
+- ✅ Stress test (up to 300 users)
+- ✅ Concurrency test
 
-## Métricas Principais
+## Key Metrics
 
 ### Performance
-- Tempo médio de criação de pagamento: < 1.5s
-- Tempo médio de consulta: < 500ms
-- P95 de resposta: < 2s
+- Average payment creation time: < 1.5s
+- Average query time: < 500ms
+- P95 response time: < 2s
 - Throughput: > 100 req/s
 
-### Confiabilidade
-- Taxa de erro: < 5%
-- Idempotência: 100% mantida
-- Concorrência: Sem violações detectadas
+### Reliability
+- Error rate: < 5%
+- Idempotency: 100% maintained
+- Concurrency: No violations detected
 
-## Arquivos de Resultado
-- \`load-test-results.json\` - Resultados do teste de carga
-- \`stress-test-results.json\` - Resultados do teste de stress
-- \`concurrency-test-results.json\` - Resultados do teste de concorrência
+## Result Files
+- \`load-test-results.json\` - Load test results
+- \`stress-test-results.json\` - Stress test results
+- \`concurrency-test-results.json\` - Concurrency test results
 
-## Recomendações
-1. Monitorar métricas de performance em produção
-2. Implementar alertas para taxa de erro > 5%
-3. Configurar auto-scaling baseado na carga
-4. Implementar circuit breaker para providers externos
+## Recommendations
+1. Monitor performance metrics in production
+2. Implement alerts for error rate > 5%
+3. Configure auto-scaling based on load
+4. Implement circuit breaker for external providers
 EOF
 
-print_success "Relatório consolidado gerado em test-results/consolidated-report.md"
+print_success "Consolidated report generated at test-results/consolidated-report.md"
 
-# Limpar processo do servidor se foi iniciado por este script
 if [ ! -z "$SERVER_PID" ]; then
-    print_status "Parando servidor (PID: $SERVER_PID)..."
+    print_status "Stopping server (PID: $SERVER_PID)..."
     kill $SERVER_PID 2>/dev/null || true
 fi
 
-print_success "🎉 Todos os testes foram executados com sucesso!"
-print_status "Resultados disponíveis em: test-results/"
-print_status "Relatório consolidado: test-results/consolidated-report.md"
+print_success "🎉 All tests executed successfully!"
+print_status "Results available at: test-results/"
+print_status "Consolidated report: test-results/consolidated-report.md"
