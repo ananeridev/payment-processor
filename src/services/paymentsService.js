@@ -2,14 +2,13 @@ import Payments from '../repositories/paymentRepository.js'
 import Jobs from '../repositories/jobRepository.js'
 
 async function createPayment(amountCents, currency, idemKey) {
-	const p = await Payments.insertOrTouch(amountCents, currency, idemKey)
-	await Jobs.enqueue(p.id)
-	return { id: p.id, status: p.status }
+	const payment = await Payments.insertOrTouch(amountCents, currency, idemKey)
+	await Jobs.enqueue(payment.id)
+	return { id: payment.id, status: payment.status }
 }
 
 async function getPayment(id) {
-	const p = await Payments.getById(id)
-	return p
+	return await Payments.getById(id)
 }
 
 export default { createPayment, getPayment }

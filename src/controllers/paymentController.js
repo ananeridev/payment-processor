@@ -1,4 +1,4 @@
-import PaymentService from '../services/paymentsService.js'
+import paymentService from '../services/paymentsService.js'
 
 async function create(req, res, next) {
 	try {
@@ -7,7 +7,7 @@ async function create(req, res, next) {
 		if (!Number.isInteger(amount_cents) || amount_cents <= 0) {
 			return res.status(400).json({ error: 'amount_cents > 0 required' })
 		}
-		const out = await PaymentService.createPayment(amount_cents, currency, idem)
+		const out = await paymentService.createPayment(amount_cents, currency, idem)
 		res.status(202).json(out)
 	} catch (e) {
 		next(e)
@@ -16,7 +16,7 @@ async function create(req, res, next) {
 
 async function getById(req, res, next) {
 	try {
-		const p = await PaymentService.getPayment(req.params.id)
+		const p = await paymentService.getPayment(req.params.id)
 		if (!p) return res.status(404).json({ error: 'not found' })
 		res.json({
 			id: p.id,

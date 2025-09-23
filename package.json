@@ -9,9 +9,9 @@
     "dev": "node --env-file=.env --watch src/index.js",
     "test": "node --test tests/integration/**/*.test.js",
     "test:integration": "node --test tests/integration/**/*.test.js",
-    "test:load": "k6 run tests/load/payment-load-test.js",
-    "test:stress": "k6 run tests/load/stress-test.js",
-    "test:concurrency": "k6 run tests/load/concurrency-test.js",
+    "test:load": "k6 run tests/load/paymentLoadTest.js --duration 5s --vus 1",
+    "test:stress": "k6 run tests/load/stressTest.js --duration 5s --vus 1",
+    "test:concurrency": "k6 run tests/load/concurrencyTest.js",
     "test:all": "./scripts/run-tests.sh",
     "worker": "node --env-file=.env src/workers/worker.js"
   },

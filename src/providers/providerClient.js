@@ -1,6 +1,5 @@
 import { getConfig } from '../config.js'
 
-// Função pura para criar timeout
 const createTimeout = (ms) => {
 	const controller = new AbortController()
 	const timeoutId = setTimeout(() => controller.abort(), ms)
@@ -10,13 +9,11 @@ const createTimeout = (ms) => {
 	}
 }
 
-// Função pura para criar headers
 const createHeaders = (idempotencyKey) => ({
 	'Content-Type': 'application/json',
 	'Idempotency-Key': idempotencyKey
 })
 
-// Função pura para criar request options
 const createRequestOptions = (payload, idempotencyKey, signal) => ({
 	method: 'POST',
 	headers: createHeaders(idempotencyKey),
@@ -24,7 +21,6 @@ const createRequestOptions = (payload, idempotencyKey, signal) => ({
 	signal
 })
 
-// Função pura para processar resposta
 const processResponse = async (response, startTime) => {
 	const latency = Date.now() - startTime
 	const body = await response.json().catch(() => ({}))
@@ -36,7 +32,6 @@ const processResponse = async (response, startTime) => {
 	}
 }
 
-// Função pura para processar erro
 const processError = (error, startTime) => {
 	const latency = Date.now() - startTime
 	const isAbort = error.name === 'AbortError'
@@ -48,7 +43,6 @@ const processError = (error, startTime) => {
 	}
 }
 
-// Função principal para chamar provider
 const callProvider = async (provider, payload, idempotencyKey) => {
 	const { httpTimeoutMs } = getConfig()
 	const timeout = createTimeout(httpTimeoutMs)

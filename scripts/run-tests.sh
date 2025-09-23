@@ -68,7 +68,7 @@ else
 fi
 
 print_status "Running basic load test..."
-k6 run $(pwd)/tests/load/payment-load-test.js --out json=test-results/load-test-results.json
+k6 run $(pwd)/tests/load/paymentLoadTest.js --out json=test-results/load-test-results.json
 if [ $? -eq 0 ]; then
     print_success "Basic load test completed ✓"
 else
@@ -76,7 +76,7 @@ else
 fi
 
 print_status "Running stress test..."
-k6 run $(pwd)/tests/load/stress-test.js --out json=test-results/stress-test-results.json
+k6 run $(pwd)/tests/load/stressTest.js --out json=test-results/stress-test-results.json
 if [ $? -eq 0 ]; then
     print_success "Stress test completed ✓"
 else
@@ -84,7 +84,7 @@ else
 fi
 
 print_status "Running concurrency test..."
-k6 run $(pwd)/tests/load/concurrency-test.js --out json=test-results/concurrency-test-results.json
+k6 run $(pwd)/tests/load/concurrencyTest.js --out json=test-results/concurrency-test-results.json
 if [ $? -eq 0 ]; then
     print_success "Concurrency test completed ✓"
 else

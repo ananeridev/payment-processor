@@ -7,7 +7,7 @@ export function getConfig() {
         { name: 'B', url: process.env.PROVIDER_B_URL, feeBps: Number(process.env.PROVIDER_B_FEE_BPS) || 150 },
     ],
     httpTimeoutMs: 5000,
-    hedgeDealyMs: 1200,
+    hedgeDelayMs: 1200,
     maxAttempts: 3,
  }
 }
