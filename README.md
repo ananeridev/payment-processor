@@ -42,18 +42,17 @@ npm run worker
 POST /payments
 Content-Type: application/json
 Idempotency-Key: unique-key-123
-
-{
-  "amount_cents": 1000,
-  "currency": "BRL"
-}
 ```
+
+<img width="605" height="215" alt="Screenshot 2025-09-23 at 12 44 14" src="https://github.com/user-attachments/assets/557cd638-5b17-4bfe-a9cf-89ceb0df52e3" />
+
 
 ### Get Payment
 
 ```http
 GET /payments/{id}
 ```
+<img width="653" height="279" alt="Screenshot 2025-09-23 at 12 43 41" src="https://github.com/user-attachments/assets/d3925aae-e325-499f-9811-6e5f2699c30c" />
 
 ## Testing
 
