@@ -42,6 +42,7 @@ npm run worker
 POST /payments
 Content-Type: application/json
 Idempotency-Key: unique-key-123
+```
 
 <img width="605" height="215" alt="Screenshot 2025-09-23 at 12 44 14" src="https://github.com/user-attachments/assets/557cd638-5b17-4bfe-a9cf-89ceb0df52e3" />
 
