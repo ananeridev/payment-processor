@@ -1,0 +1,21 @@
+{
+  "name": "@ananeri/payment-processor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "module",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env src/index.js",
+    "dev": "node --env-file=.env --watch src/index.js",
+    "test": "node --test tests/integration/**/*.test.js",
+    "test:integration": "node --test tests/integration/**/*.test.js",
+    "test:load": "k6 run tests/load/payment-load-test.js",
+    "test:stress": "k6 run tests/load/stress-test.js",
+    "test:concurrency": "k6 run tests/load/concurrency-test.js",
+    "test:all": "./scripts/run-tests.sh",
+    "worker": "node --env-file=.env src/workers/worker.js"
+  },
+  "keywords": [],
+  "author": "ananeridev",
+  "license": "ISC"
+}
