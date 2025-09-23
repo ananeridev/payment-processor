@@ -2,41 +2,37 @@ import http from 'k6/http'
 import { check, sleep } from 'k6'
 import { Rate, Trend } from 'k6/metrics'
 
-// Métricas customizadas
 const errorRate = new Rate('errors')
 const paymentCreationTime = new Trend('payment_creation_time')
 const paymentRetrievalTime = new Trend('payment_retrieval_time')
 
-// Configuração do teste
 export const options = {
   stages: [
-    { duration: '2m', target: 10 }, // Ramp up para 10 usuários
-    { duration: '5m', target: 10 }, // Manter 10 usuários
-    { duration: '2m', target: 50 }, // Ramp up para 50 usuários
-    { duration: '5m', target: 50 }, // Manter 50 usuários
-    { duration: '2m', target: 100 }, // Ramp up para 100 usuários
-    { duration: '5m', target: 100 }, // Manter 100 usuários
-    { duration: '2m', target: 0 }, // Ramp down para 0 usuários
+    { duration: '2m', target: 10 },
+    { duration: '5m', target: 10 },
+    { duration: '2m', target: 50 },
+    { duration: '5m', target: 50 },
+    { duration: '2m', target: 100 },
+    { duration: '5m', target: 100 },
+    { duration: '2m', target: 0 },
   ],
   thresholds: {
-    http_req_duration: ['p(95)<2000'], // 95% das requisições devem ser < 2s
-    http_req_failed: ['rate<0.1'], // Taxa de erro < 10%
-    errors: ['rate<0.05'], // Taxa de erro customizada < 5%
-    payment_creation_time: ['p(95)<1500'], // 95% das criações < 1.5s
-    payment_retrieval_time: ['p(95)<500'], // 95% das consultas < 500ms
+    http_req_duration: ['p(95)<2000'],
+    http_req_failed: ['rate<0.1'],
+    errors: ['rate<0.05'],
+    payment_creation_time: ['p(95)<1500'],
+    payment_retrieval_time: ['p(95)<500'],
   },
 }
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'
 
-// Função para gerar chave de idempotência única
 function generateIdempotencyKey() {
   return `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
-// Função para gerar payload de pagamento
 function generatePaymentPayload() {
-  const amounts = [1000, 2500, 5000, 10000, 25000] // Valores em centavos
+  const amounts = [1000, 2500, 5000, 10000, 25000]
   const currencies = ['BRL', 'USD', 'EUR']
   
   return {
@@ -49,7 +45,6 @@ export default function () {
   const idempotencyKey = generateIdempotencyKey()
   const payload = generatePaymentPayload()
 
-  // Teste 1: Criar pagamento
   const createStartTime = Date.now()
   const createResponse = http.post(`${BASE_URL}/payments`, JSON.stringify(payload), {
     headers: {
@@ -82,7 +77,6 @@ export default function () {
 
   const paymentId = JSON.parse(createResponse.body).id
 
-  // Teste 2: Consultar pagamento
   const retrieveStartTime = Date.now()
   const retrieveResponse = http.get(`${BASE_URL}/payments/${paymentId}`)
   const retrieveDuration = Date.now() - retrieveStartTime
@@ -108,7 +102,6 @@ export default function () {
     console.error(`Payment retrieval failed: ${retrieveResponse.status} - ${retrieveResponse.body}`)
   }
 
-  // Teste 3: Testar idempotência (criar pagamento com mesma chave)
   const duplicateResponse = http.post(`${BASE_URL}/payments`, JSON.stringify(payload), {
     headers: {
       'Content-Type': 'application/json',
@@ -120,7 +113,7 @@ export default function () {
     'idempotency works correctly': (r) => {
       try {
         const body = JSON.parse(r.body)
-        return body.id === paymentId // Deve retornar o mesmo ID
+        return body.id === paymentId
       } catch {
         return false
       }
@@ -129,23 +122,22 @@ export default function () {
 
   errorRate.add(!idempotencySuccess)
 
-  // Aguardar um pouco antes da próxima iteração
-  sleep(Math.random() * 2 + 0.5) // Entre 0.5 e 2.5 segundos
+  sleep(Math.random() * 2 + 0.5)
 }
 
 export function handleSummary(data) {
   return {
     'load-test-results.json': JSON.stringify(data, null, 2),
     stdout: `
-=== RESULTADOS DO TESTE DE CARGA ===
-Duração total: ${data.metrics.iteration_duration.values.avg.toFixed(2)}ms
-Iterações: ${data.metrics.iterations.values.count}
-Taxa de erro HTTP: ${(data.metrics.http_req_failed.values.rate * 100).toFixed(2)}%
-Taxa de erro customizada: ${(data.metrics.errors.values.rate * 100).toFixed(2)}%
-Tempo médio de criação: ${data.metrics.payment_creation_time.values.avg.toFixed(2)}ms
-Tempo médio de consulta: ${data.metrics.payment_retrieval_time.values.avg.toFixed(2)}ms
-P95 criação: ${data.metrics.payment_creation_time.values['p(95)'].toFixed(2)}ms
-P95 consulta: ${data.metrics.payment_retrieval_time.values['p(95)'].toFixed(2)}ms
+=== LOAD TEST RESULTS ===
+Total duration: ${data.metrics.iteration_duration.values.avg.toFixed(2)}ms
+Iterations: ${data.metrics.iterations.values.count}
+HTTP error rate: ${(data.metrics.http_req_failed.values.rate * 100).toFixed(2)}%
+Custom error rate: ${(data.metrics.errors.values.rate * 100).toFixed(2)}%
+Average creation time: ${data.metrics.payment_creation_time.values.avg.toFixed(2)}ms
+Average retrieval time: ${data.metrics.payment_retrieval_time.values.avg.toFixed(2)}ms
+P95 creation: ${data.metrics.payment_creation_time.values['p(95)'].toFixed(2)}ms
+P95 retrieval: ${data.metrics.payment_retrieval_time.values['p(95)'].toFixed(2)}ms
     `,
   }
 }

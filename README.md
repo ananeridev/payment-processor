@@ -75,7 +75,7 @@ npm run test:all
 - Throughput: > 100 req/s
 - Idempotency: 100% maintained
 
-## Architecture
+## Arch
 
 1. **Create** payment via API
 2. **Validate** idempotency key
@@ -86,16 +86,3 @@ npm run test:all
 7. **Update** status in database
 8. **Notify** via outbox events
 
-## Contributing
-
-1. Fork the project
-2. Create a feature branch
-3. Run tests: `npm run test:all`
-4. Commit changes
-5. Push to branch
-6. Open Pull Request
-
-## License
-
-ISC License
-# payment-processor
