@@ -61,7 +61,7 @@ jobs:
         NODE_ENV: test
 
     - name: Seed test database
-      run: npm run test:seed
+      run: node tests/config/seed.js
       env:
         NODE_ENV: test
         TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
