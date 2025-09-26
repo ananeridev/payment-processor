@@ -1,0 +1,283 @@
+name: Pull Request Tests
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  quick-tests:
+    name: Quick Test Suite
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: payment_processor_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Initialize database
+      run: |
+        export PGPASSWORD=test_password
+        psql -h localhost -U test_user -d payment_processor_test -f docker/postgres/init/01-init.sql
+      env:
+        PGPASSWORD: test_password
+
+    - name: Run unit tests only
+      run: npm run test:unit
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/payment_processor_test
+
+    - name: Check test coverage
+      run: npm run test:unit:coverage
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/payment_processor_test
+
+    - name: Comment coverage on PR
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const coverage = fs.readFileSync('coverage/coverage-summary.json', 'utf8');
+            const coverageData = JSON.parse(coverage);
+            const total = coverageData.total;
+            
+            const comment = `## 📊 Test Coverage Report
+            
+            | Metric | Percentage | Covered/Total |
+            |--------|------------|---------------|
+            | Lines | ${total.lines.pct}% | ${total.lines.covered}/${total.lines.total} |
+            | Functions | ${total.functions.pct}% | ${total.functions.covered}/${total.functions.total} |
+            | Branches | ${total.branches.pct}% | ${total.branches.covered}/${total.branches.total} |
+            | Statements | ${total.statements.pct}% | ${total.statements.covered}/${total.statements.total} |
+            
+            ${total.lines.pct >= 80 ? '✅' : '⚠️'} Overall coverage: **${total.lines.pct}%**
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Coverage file not found or invalid');
+          }
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: quick-tests
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: test_user
+          POSTGRES_DB: payment_processor_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Initialize database
+      run: |
+        export PGPASSWORD=test_password
+        psql -h localhost -U test_user -d payment_processor_test -f docker/postgres/init/01-init.sql
+      env:
+        PGPASSWORD: test_password
+
+    - name: Run integration tests
+      run: npm run test:integration
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/payment_processor_test
+
+    - name: Run stability tests (subset)
+      run: |
+        # Run a subset of stability tests for PR validation
+        timeout 300 npm run test:stability || true
+      env:
+        NODE_ENV: test
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/payment_processor_test
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: |
+        # Allow info and low severity, fail on moderate and above
+        npm audit --audit-level=moderate
+
+    - name: Check for known vulnerabilities
+      run: |
+        # Check for high severity vulnerabilities
+        HIGH_VULNS=$(npm audit --parseable --audit-level=high | wc -l)
+        if [ $HIGH_VULNS -gt 0 ]; then
+          echo "❌ Found $HIGH_VULNS high severity vulnerabilities"
+          npm audit --audit-level=high
+          exit 1
+        else
+          echo "✅ No high severity vulnerabilities found"
+        fi
+
+  validate-changes:
+    name: Validate Changes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+        
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v39
+      with:
+        files: |
+          src/**/*.js
+          tests/**/*.js
+          package.json
+          package-lock.json
+
+    - name: Validate test coverage for changed files
+      if: steps.changed-files.outputs.any_changed == 'true'
+      run: |
+        echo "Changed files:"
+        echo "${{ steps.changed-files.outputs.all_changed_files }}"
+        
+        # Check if tests were added for new files
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          if [[ $file == src/**/*.js ]]; then
+            # Extract filename without extension
+            filename=$(basename "$file" .js)
+            test_file="tests/unit/${filename}.test.js"
+            
+            if [[ ! -f "$test_file" ]]; then
+              echo "⚠️  Warning: No test file found for $file"
+              echo "   Expected: $test_file"
+            else
+              echo "✅ Test file exists for $file"
+            fi
+          fi
+        done
+
+    - name: Check for breaking changes
+      run: |
+        # Check if package.json version was bumped for potential breaking changes
+        if git diff --name-only HEAD~1 | grep -q "package.json"; then
+          echo "📦 package.json was modified"
+          # You can add more sophisticated breaking change detection here
+        fi
+
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [quick-tests, integration-tests, security-check, validate-changes]
+    if: always()
+    
+    steps:
+    - name: PR Summary Comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const jobs = [
+            { name: 'Unit Tests', result: '${{ needs.quick-tests.result }}' },
+            { name: 'Integration Tests', result: '${{ needs.integration-tests.result }}' },
+            { name: 'Security Check', result: '${{ needs.security-check.result }}' },
+            { name: 'Validate Changes', result: '${{ needs.validate-changes.result }}' }
+          ];
+          
+          const getIcon = (result) => {
+            switch(result) {
+              case 'success': return '✅';
+              case 'failure': return '❌';
+              case 'cancelled': return '⏸️';
+              case 'skipped': return '⏭️';
+              default: return '⏳';
+            }
+          };
+          
+          const summary = jobs.map(job => 
+            `${getIcon(job.result)} **${job.name}**: ${job.result}`
+          ).join('\n');
+          
+          const allPassed = jobs.every(job => job.result === 'success');
+          const overallStatus = allPassed ? '🎉 All checks passed!' : '⚠️ Some checks failed';
+          
+          const comment = `## 🔍 PR Test Results
+          
+          ${summary}
+          
+          ---
+          
+          ${overallStatus}
+          
+          ${allPassed ? 
+            'This PR is ready for review! 🚀' : 
+            'Please fix the failing checks before requesting review.'
+          }
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

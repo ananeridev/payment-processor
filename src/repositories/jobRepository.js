@@ -1,13 +1,14 @@
 import { query } from '../db.js'
 
-async function enqueue(paymentId) {
+async function enqueue(paymentId, client = null) {
+	const queryFn = client ? client.query.bind(client) : query
 	const sql = `
 		INSERT INTO jobs (payment_id, run_at, status)
 		SELECT $1, now(), 'queued'
 		WHERE NOT EXISTS (
 		  SELECT 1 FROM jobs WHERE payment_id = $1 AND status IN ('queued','processing')
 		)`
-	await query(sql, [paymentId])
+	await queryFn(sql, [paymentId])
 }
 
 async function lockNext(workerId) {

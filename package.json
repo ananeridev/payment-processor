@@ -7,13 +7,18 @@
   "scripts": {
     "start": "node --env-file=.env src/index.js",
     "dev": "node --env-file=.env --watch src/index.js",
-    "test": "node --test tests/integration/**/*.test.js",
-    "test:integration": "node --test tests/integration/**/*.test.js",
+    "test": "npx poku tests/unit/*.test.js",
+    "test:unit": "npx poku tests/unit/*.test.js",
+    "test:cov": "nyc npx poku tests/unit/*.test.js && npx poku tests/unit/*.test.js",
+    "test:e2e": "npm run db:test:up && npm run test:seed && NODE_ENV=test node --env-file=.env.test node_modules/.bin/poku tests/e2e/*.test.js",
     "test:load": "k6 run tests/load/paymentLoadTest.js --duration 5s --vus 1",
     "test:stress": "k6 run tests/load/stressTest.js --duration 5s --vus 1",
     "test:concurrency": "k6 run tests/load/concurrencyTest.js",
-    "test:all": "./scripts/run-tests.sh",
-    "worker": "node --env-file=.env src/workers/worker.js"
+    "test:all": "npm run test:unit && npm run test:e2e",
+    "test:seed": "NODE_ENV=test node --env-file=.env.test tests/config/seed.js",
+    "worker": "node --env-file=.env src/workers/worker.js",
+    "db:test:up": "docker-compose -f docker-compose.test.yml up -d --wait",
+    "db:test:down": "docker-compose -f docker-compose.test.yml down -v"
   },
   "keywords": [],
   "author": "ananeridev",
@@ -21,5 +26,11 @@
   "dependencies": {
     "express": "^5.1.0",
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "nyc": "^17.1.0",
+    "poku": "^3.0.2",
+    "sinon": "^21.0.0",
+    "supertest": "^7.1.4"
   }
 }

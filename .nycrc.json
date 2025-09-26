@@ -1,0 +1,14 @@
+{
+  "include": [
+    "src/services/**/*.js"
+  ],
+  "exclude": [
+    "node_modules/**",
+    "tests/**"
+  ],
+  "reporter": [
+    "text",
+    "html"
+  ],
+  "all": true
+}
