@@ -68,7 +68,7 @@ jobs:
 
     - name: Start application for E2E tests
       run: |
-        npm start:test &
+        npm run start:test &
         sleep 5
       env:
         NODE_ENV: test
