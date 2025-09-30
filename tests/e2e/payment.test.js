@@ -73,7 +73,11 @@ beforeEach(async () => {
 	return runSeed()
 })
 
-after( async () => _testServer.close())
+after( async () => {
+	if (_testServer && _testServer.close) {
+		_testServer.close()
+	}
+})
 
 test('POST /payments - should create payment with valid data', async () => {
 	const result = await validatePaymentCreation(paymentPayloads.valid, 'test-valid-1')
