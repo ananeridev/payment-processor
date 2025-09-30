@@ -1,5 +1,5 @@
 import { test, assert, beforeEach } from 'poku'
-import { after } from 'node:test'
+import { before, after } from 'node:test'
 import { validCurrencies, paymentPayloads } from '../config/testData.js'
 import { setupTestDatabase } from '../helpers/testSetup.js'
 import express from 'express'
@@ -46,6 +46,12 @@ async function validatePaymentRetrieval(paymentId, expectedData) {
 	
 	return res.body
 }
+before(async () => {
+	const { server } = await import('../../src/index.js')
+	_testServer = server
+	_testServerAddress = await server.address()
+
+})
 
 beforeEach(async () => {
 	if (!dbReady) {
