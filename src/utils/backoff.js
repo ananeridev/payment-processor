@@ -3,4 +3,3 @@ export function nextDelaySec(attempts) {
 	const jitter = Math.floor(Math.random() * 3)
 	return base + jitter
 }
-    

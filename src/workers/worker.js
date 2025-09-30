@@ -1,8 +1,12 @@
 import os from 'os'
-import { JobRepository, PaymentRepository, AttemptsRepository, ProviderHealthRepository, OutboxRepository } from '../repositories/index.js'
-import { routedPayment } from '../services/routingService.js'
-import { nextDelaySec } from '../utils/index.js'
+import Jobs from '../repositories/jobRepository.js'
+import Payments from '../repositories/paymentRepository.js'
+import Attempts from '../repositories/attemptsRepository.js'
+import Outbox from '../repositories/outboxRepository.js'
+import HealthRepo from '../repositories/providerHealthRepository.js'
 import { getConfig } from '../config.js'
+import { callProvider } from '../providers/providerClient.js'
+import routingServiceFactory from '../services/routingService.js'
 
 /**
  * Create a worker id
@@ -30,15 +34,16 @@ const shouldFinalize = (payment) =>
 const shouldFail = (attempts, maxAttempts) => attempts >= maxAttempts
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const routingService = routingServiceFactory({ getConfig, callProvider, HealthRepo, sleep })
 
 class PaymentWorker {
 	constructor() {
 		this.workerId = createWorkerId()
-		this.jobRepo = JobRepository
-		this.paymentRepo = PaymentRepository
-		this.attemptsRepo = AttemptsRepository
-		this.healthRepo = ProviderHealthRepository
-		this.outboxRepo = OutboxRepository
+		this.jobRepo = Jobs
+		this.paymentRepo = Payments
+		this.attemptsRepo = Attempts
+		this.healthRepo = HealthRepo
+		this.outboxRepo = Outbox
 		this.config = getConfig()
 	}
 
@@ -59,7 +64,7 @@ class PaymentWorker {
 			await this.paymentRepo.markProcessing(payment.id)
 
 			const payload = createPaymentPayload(payment)
-			const response = await routedPayment(payload, payment.idempotency_key)
+			const response = await routingService.routedPayment(payload, payment.idempotency_key)
 
 			const attemptStatus = determineAttemptStatus(response)
 			await this.attemptsRepo.record(

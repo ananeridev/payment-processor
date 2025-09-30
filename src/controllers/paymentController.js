@@ -1,4 +1,9 @@
-import paymentService from '../services/paymentsService.js'
+import Payments from '../repositories/paymentRepository.js'
+import Jobs from '../repositories/jobRepository.js'
+import { pool } from '../db.js'
+import paymentsServiceFactory from '../services/paymentsService.js'
+
+const paymentService = paymentsServiceFactory({ pool, Payments, Jobs })
 
 async function create(req, res, next) {
 	try {
