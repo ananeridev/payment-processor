@@ -66,6 +66,14 @@ jobs:
         NODE_ENV: test
         TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 
+    - name: Start application for E2E tests
+      run: |
+        npm start &
+        sleep 5
+      env:
+        NODE_ENV: test
+        TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+
     - name: Run E2E tests
       run: npx poku tests/e2e/*.test.js
       env:
