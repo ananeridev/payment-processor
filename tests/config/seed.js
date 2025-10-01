@@ -65,7 +65,6 @@ export async function runSeed() {
 	`)
 }
 
-// Run if called directly
 async function run() {
 	try {
 		await runSeed()

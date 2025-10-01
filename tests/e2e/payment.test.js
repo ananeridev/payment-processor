@@ -1,9 +1,9 @@
 import { test, assert, beforeEach } from 'poku'
 import { before, after } from 'node:test'
-import { validCurrencies, paymentPayloads } from '../config/testData.js'
-import { setupTestDatabase } from '../helpers/testSetup.js'
 import express from 'express'
 import request from 'supertest'
+import { validCurrencies, paymentPayloads } from '../config/testData.js'
+import { setupTestDatabase } from '../helpers/testSetup.js'
 import { buildPaymentsRouter } from '../../src/routes/paymentsRoute.js'
 import { runSeed } from '../config/seed.js'
 
@@ -22,6 +22,7 @@ function getPayment(id) {
 	return _testServer
 		.get(`/payments/${id}`)
 }
+
 
 async function validatePaymentCreation(paymentData, idempotencyKey = 'test-key') {
 	const res = await createPayment(paymentData, idempotencyKey)
